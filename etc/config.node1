@@ -1,0 +1,29 @@
+root = "./"
+skynet_root = root .. "skynet/"
+
+-- C服务的路径
+cpath = skynet_root.."cservice/?.so"
+
+-- lua 配置项
+lualoader = skynet_root .. "lualib/loader.lua"
+luaservice = root.."service/?.lua;"..root.."service/?/init.lua;"..skynet_root.."service/?.lua"
+lua_path = root.."etc/?.lua;"..root.."lualib/?.lua;"..root.."lualib/?.lua;"..skynet_root.."lualib/?.lua;"..skynet_root.."lualib/?/init.lua"
+lua_cpath = root .. "luaclib/?.so;"..skynet_root .. "luaclib/?.so"
+-- snax = skynet_root.."examples/?.lua;"..skynet_root.."test/?.lua"
+
+-- preload = "./examples/preload.lua"	-- run preload.lua before every lua service run\
+thread = 8
+harbor = 0
+-- address = "127.0.0.1:2526"
+-- master = "127.0.0.1:2013"
+start = "main"	-- main script
+bootstrap = "snlua bootstrap"	-- The service for bootstrap
+-- standalone = "0.0.0.0:2013"
+-- snax_interface_g = "snax_g"
+
+-- 后台模式（必要时开启）
+logpath = "."
+logger = nil
+-- daemon = "./skynet.pid"
+
+node = "node1"
