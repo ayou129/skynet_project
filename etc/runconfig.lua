@@ -4,8 +4,8 @@ return {
         node1 = "127.0.0.1:9701",
         node2 = "127.0.0.1:9801",
     },
-    -- agentmgr 全局唯一服务 在节点1这个节点上
-    agentmgr = {
+    -- agent_mgr 全局唯一服务 在节点1这个节点上
+    agent_mgr = {
         node = "node1"
     },
     -- scene
@@ -18,27 +18,23 @@ return {
     -- 节点1
     node1 = {
         gateway = {
-            port = 9702,
-            maxclient = 1024,
-            nodelay = true,
+            [1] = { port = 9702 },
+            [2] = { port = 9703 },
         },
         login = {
-            port = 9711,
-            maxclient = 1024,
-            nodelay = true,
+            [1] = {},
+            [2] = {},
         },
     },
     -- 节点2
     node2 = {
         gateway = {
-            port = 9802,
-            maxclient = 1024,
-            nodelay = true,
+            [1] = { port = 9802 },
+            [2] = { port = 9803 },
         },
         login = {
-            port = 9811,
-            maxclient = 1024,
-            nodelay = true,
+            [1] = {},
+            [2] = {},
         },
     }
 }

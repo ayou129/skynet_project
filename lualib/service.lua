@@ -44,12 +44,6 @@ local dispatch = function(session, source, cmd, ...)
     skynet.retpack(table.unpack(ret, 2))
 end
 
-function init()
-    skynet.dispatch("lua", dispatch)
-    if M.init then
-        M.init()
-    end
-end
 
 
 -- node 接收方的节点 srv 接收方的服务名
@@ -75,6 +69,13 @@ function M.send(node, srv, ...)
     else
         -- 不同节点
         return cluster.send(node, srv, ...)
+    end
+end
+
+function init()
+    skynet.dispatch("lua", dispatch)
+    if M.init then
+        M.init()
     end
 end
 
