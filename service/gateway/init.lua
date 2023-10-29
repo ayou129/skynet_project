@@ -37,7 +37,7 @@ local str_unpack = function(msgstr)
             table.insert(msg, arg)
         else
             table.insert(msg, msgstr)
-            return msg
+            break
         end
     end
     -- cmd login
@@ -55,7 +55,24 @@ local str_pack = function(cmd, msg)
 end
 
 function process_msg(fd, msgstr)
-    print(fd, msgstr)
+    local cmd, msg = str_unpack(msgstr)
+    skynet.error("recv " .. fd .. " [" .. cmd .. "] {" .. table.concat(msg, ",") .. "}")
+
+    local conn = conns[fd]
+    local player_id = conn.player_id
+    --尚未完成登录流程
+    if not player_id then
+        local node = skynet.getenv("node")
+        local node_cfg = runconfig[node]
+        local login_id = math.random(1, #node_cfg.login)
+        local login = "login" .. login_id
+        skynet.send(login, "lua", "client", fd, cmd, msg)
+        --完成登录流程
+    else
+        local gate_player = gate_players[player_id]
+        local agent = gate_player.agent
+        skynet.send(agent, "lua", "client", cmd, msg)
+    end
 end
 
 local process_buff = function(fd, buff)
@@ -109,12 +126,13 @@ end
 local connect = function(fd, addr)
     skynet.error("[Gateway connect] fd:" .. fd .. " addr:" .. addr)
     local c = conn()
+
+    conns[fd] = c
     c.fd = fd
 
     -- 接收客户端消息
     skynet.fork(recv_loop, fd)
 end
-
 
 s.resp.send_by_fd = function(source, fd, msg)
     if not conns[fd] then
@@ -124,6 +142,24 @@ s.resp.send_by_fd = function(source, fd, msg)
     local buff = str_pack(msg[1], msg)
     skynet.error("[Gateway send] fd:" .. fd .. " buff:" .. buff)
     socket.write(fd, buff)
+end
+
+s.resp.kick = function(source, player_id)
+    local gate_player = gate_players[player_id]
+    if not gate_player then
+        return
+    end
+
+    local c = gate_player.conn
+    gate_players[player_id] = nil
+
+    if not c then
+        return
+    end
+    conns[c.fd] = nil
+
+    disconnect(c.fd)
+    socket.close(c.fd)
 end
 
 s.resp.send = function(source, player_id, msg)
@@ -150,6 +186,7 @@ s.resp.sure_agent = function(source, fd, player_id, agent)
     end
 
     conn.player_id = player_id
+
     local gate_player = gatePlayer()
     gate_player.player_id = player_id
     gate_player.agent = agent

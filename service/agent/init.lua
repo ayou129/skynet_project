@@ -12,9 +12,6 @@ s.resp.client = function(source, cmd, msg)
         skynet.error("s.resp.client fail! cmd:" .. cmd)
     end
 end
-s.resp.kick = function(source)
-    -- 保存角色数据
-end
 s.resp.exit = function(source)
     skynet.exit()
 end

@@ -10,9 +10,9 @@ skynet.start(function()
     local node_cfg = runconfig[node]
 
     -- 节点
-    local debug_console = skynet.newservice('debug_console', '0.0.0.0', 8888)
+    skynet.newservice('debug_console', 8888)
     local node_mgr = skynet.newservice('node_mgr', "node_mgr", 0)
-    skynet.name(".node_mgr", node_mgr) -- 设置别名 name,address
+    skynet.name("node_mgr", node_mgr) -- 设置别名 name,address
     --
     -- 集群
     cluster.reload(runconfig.cluster)
@@ -21,6 +21,7 @@ skynet.start(function()
     -- Gateway
     for i, v in ipairs(node_cfg.gateway or {}) do
         local service = skynet.newservice('gateway', 'gateway', i)
+        print("gateway" .. i)
         skynet.name("gateway" .. i, service) -- 设置别名 name,address
     end
 

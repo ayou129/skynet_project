@@ -28,6 +28,7 @@ function s.init()
 end
 
 s.resp.reqlogin = function(source, player_id, node, gate)
+    print("reqlogin", player_id, node, gate)
     local mplayer = players[player_id]
 
     -- 登录过程中 禁止操作
@@ -40,8 +41,8 @@ s.resp.reqlogin = function(source, player_id, node, gate)
         return false
     end
 
-    -- 在线，顶替
     if mplayer then
+        print("在线，顶替")
         local pnode = mplayer.node
         local pagent = mplayer.agent
         local pgate = mplayer.gate
@@ -58,7 +59,7 @@ s.resp.reqlogin = function(source, player_id, node, gate)
     end
 
     -- 上线
-    ---- 将该用户信息 记录到 mgr_players
+    print("将该用户信息 记录到 mgr_players")
     local player = mgrPlayer()
     player.player_id = player_id
     player.node = node
@@ -67,11 +68,12 @@ s.resp.reqlogin = function(source, player_id, node, gate)
     player.agent = nil
     players[player_id] = player
 
-    ---- 给改用户建立一个agent，并且绑定gate&agent
+    print("给改用户建立一个agent，并且绑定gate&agent", node)
     local agent = s.call(node, "node_mgr", 'newservice', "agent", "agent", player_id)
     player.agent = agent
     player.status = STATUS.LOGIN
 
+    print("reqlogin over")
     return true, agent
 end
 
