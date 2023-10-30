@@ -27,8 +27,7 @@ function s.init()
 
 end
 
-s.resp.reqlogin = function(source, player_id, node, gate)
-    print("reqlogin", player_id, node, gate)
+s.resp.req_login = function(addr, player_id, node, gate)
     local mplayer = players[player_id]
 
     -- 登录过程中 禁止操作
@@ -43,19 +42,21 @@ s.resp.reqlogin = function(source, player_id, node, gate)
 
     if mplayer then
         print("在线，顶替")
-        local pnode = mplayer.node
-        local pagent = mplayer.agent
-        local pgate = mplayer.gate
+        local player_node = mplayer.node
+        local player_agent = mplayer.agent
+        local player_gate = mplayer.gate
         mplayer.start = STATUS.OFFLINE
         -- 踢出
-        s.call(pnode, pagent, "kick")
+        s.call(player_node, player_agent, "kick")
 
-        -- 退出
-        s.send(pnode, pagent, "exit")
+        -- 关闭 agent服务
+        s.send(player_node, player_agent, "exit")
 
-        s.send(pnode, pgate, "send", player_id, { "kick", "你被顶替下线" })
+        -- 发给 player_id 消息
+        s.send(player_node, player_gate, "send", player_id, { "kick", "你被顶替下线" })
 
-        s.call(pnode, pgate, "kick", player_id)
+        -- 踢出用户结束fd
+        s.call(player_node, player_gate, "kick", player_id)
     end
 
     -- 上线
@@ -66,6 +67,8 @@ s.resp.reqlogin = function(source, player_id, node, gate)
     player.gate = gate
     player.status = STATUS.LOGIN
     player.agent = nil
+
+    -- 引用关系，下方修改也生效
     players[player_id] = player
 
     print("给改用户建立一个agent，并且绑定gate&agent", node)
@@ -73,11 +76,11 @@ s.resp.reqlogin = function(source, player_id, node, gate)
     player.agent = agent
     player.status = STATUS.LOGIN
 
-    print("reqlogin over")
+    print("req_login over")
     return true, agent
 end
 
-s.resp.reqkick = function(source, player_id, reason)
+s.resp.kick = function(addr, player_id, reason)
     local mplayer = players[player_id]
     if not mplayer then
         skynet.error("玩家不存在")
@@ -89,17 +92,17 @@ s.resp.reqkick = function(source, player_id, reason)
         return false
     end
 
-    local pnode = mplayer.node
-    local pagent = mplayer.agent
-    local pgate = mplayer.gate
+    local player_node = mplayer.node
+    local player_agent = mplayer.agent
+    local player_gate = mplayer.gate
     mplayer.start = STATUS.OFFLINE
     -- 踢出
-    s.call(pnode, pagent, "kick")
+    s.call(player_node, player_agent, "kick")
 
     -- 退出
-    s.send(pnode, pagent, "exit")
+    s.send(player_node, player_agent, "exit")
 
-    s.send(pnode, pgate, "kick", player_id)
+    s.send(player_node, player_gate, "kick", player_id)
 
     players[player_id] = nil
 

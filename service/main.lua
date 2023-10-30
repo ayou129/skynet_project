@@ -10,7 +10,7 @@ skynet.start(function()
     local node_cfg = runconfig[node]
 
     -- 节点
-    skynet.newservice('debug_console', 8888)
+    skynet.uniqueservice('debug_console', 8888)
     local node_mgr = skynet.newservice('node_mgr', "node_mgr", 0)
     skynet.name("node_mgr", node_mgr) -- 设置别名 name,address
     --
@@ -19,16 +19,10 @@ skynet.start(function()
     cluster.open(node)
 
     -- Gateway
-    for i, v in ipairs(node_cfg.gateway or {}) do
+    for i, v in pairs(node_cfg.gateway or {}) do
         local service = skynet.newservice('gateway', 'gateway', i)
         print("gateway" .. i)
         skynet.name("gateway" .. i, service) -- 设置别名 name,address
-    end
-
-    -- login
-    for i, v in ipairs(node_cfg.login or {}) do
-        local service = skynet.newservice('login', 'login', i)
-        skynet.name("login" .. i, service) -- 设置别名 name,address
     end
 
     -- agent_mgr
@@ -42,9 +36,21 @@ skynet.start(function()
         skynet.name("agent_mgr", proxy) -- 设置别名 name,address
     end
 
+    -- login
+    for i, v in pairs(node_cfg.login or {}) do
+        local service = skynet.newservice('login', 'login', i)
+        skynet.name("login" .. i, service) -- 设置别名 name,address
+    end
+
+    -- scene
+    for _, sid in pairs(runconfig.scene[node] or {}) do
+        -- 1 1001
+        local service = skynet.newservice('scene', 'scene', sid)
+        skynet.name("scene" .. sid, service) -- 设置别名 name,address
+    end
+
     --print(1)
     --skynet.error("Server start. node1:" .. runconfig.cluster.node1)
     --skynet.newservice('gateway', 'gateway', 1)
     ----skynet.newservice("debug_console", 8000)
-    --skynet.exit()
 end)

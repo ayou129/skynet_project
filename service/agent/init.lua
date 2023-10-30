@@ -1,18 +1,32 @@
 local skynet = require("skynet")
 local s = require("service")
 
-s.resp.client = function(source, cmd, msg)
-    s.gate = source
+s.client = {}
+s.gate = nil
+
+require "scene"
+
+s.resp.client = function(addr, cmd, msg)
+    s.gate = addr
+    local ret_msg = ""
     if s.client[cmd] then
-        local ret_msg = s.client[cmd](msg, source)
+        ret_msg = s.client[cmd](msg, addr)
         if ret_msg then
-            skynet.send(source, "lua", "send", s.id, ret_msg)
+            skynet.send(addr, "lua", "send", s.id, ret_msg)
         end
     else
-        skynet.error("s.resp.client fail! cmd:" .. cmd)
+        ret_msg = { "ret_err", -1, "request not found" }
+        skynet.error("request not found", cmd)
     end
 end
-s.resp.exit = function(source)
+
+s.resp.kick = function(addr)
+    s.leave_scene()
+    --在此处保存角色数据
+    skynet.sleep(200)
+end
+
+s.resp.exit = function(addr)
     skynet.exit()
 end
 
@@ -22,6 +36,10 @@ s.client.work = function(msg)
         "work",
         s.data.coin
     }
+end
+
+s.resp.send = function(addr, msg)
+    skynet.send(s.gate, "lua", "send", s.id, msg)
 end
 
 s.init = function()

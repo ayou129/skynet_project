@@ -27,16 +27,16 @@ function gatePlayer()
 end
 
 
--- 解码 msgstr = 'login,101,102'
-local str_unpack = function(msgstr)
+-- 解码 msg_str = 'login,101,102'
+local str_unpack = function(msg_str)
     local msg = {}
     while true do
-        local arg, rest = string.match(msgstr, "(.-),(.*)")
+        local arg, rest = string.match(msg_str, "(.-),(.*)")
         if arg then
-            msgstr = rest
+            msg_str = rest
             table.insert(msg, arg)
         else
-            table.insert(msg, msgstr)
+            table.insert(msg, msg_str)
             break
         end
     end
@@ -54,20 +54,20 @@ local str_pack = function(cmd, msg)
     return table.concat(msg, ",") .. "\r\n"
 end
 
-function process_msg(fd, msgstr)
-    local cmd, msg = str_unpack(msgstr)
+function process_msg(fd, msg_str)
+    local cmd, msg = str_unpack(msg_str)
     skynet.error("recv " .. fd .. " [" .. cmd .. "] {" .. table.concat(msg, ",") .. "}")
 
     local conn = conns[fd]
     local player_id = conn.player_id
-    --尚未完成登录流程
+
     if not player_id then
+        -- 未登录，gate -> login agent，设置gate_players
         local node = skynet.getenv("node")
         local node_cfg = runconfig[node]
         local login_id = math.random(1, #node_cfg.login)
         local login = "login" .. login_id
         skynet.send(login, "lua", "client", fd, cmd, msg)
-        --完成登录流程
     else
         local gate_player = gate_players[player_id]
         local agent = gate_player.agent
@@ -78,10 +78,10 @@ end
 local process_buff = function(fd, buff)
     while true do
         -- 取出第一条消息 和 剩余的部分
-        local msgstr, rest = string.match(buff, "^(.-)\r\n(.*)")
-        if msgstr then
+        local msg_str, rest = string.match(buff, "^(.-)\r\n(.*)")
+        if msg_str then
             buff = rest
-            process_msg(fd, msgstr)
+            process_msg(fd, msg_str)
         else
             return buff
         end
@@ -102,7 +102,7 @@ local disconnect = function(fd)
         -- 已经在游戏中
         gate_players[player_id] = nil
         local reason = "网络断开"
-        skynet.call("agent_mgr", "lua", "reqkick", player_id, reason)
+        skynet.call("agent_mgr", "lua", "kick", player_id, reason)
     end
 end
 
@@ -134,7 +134,8 @@ local connect = function(fd, addr)
     skynet.fork(recv_loop, fd)
 end
 
-s.resp.send_by_fd = function(source, fd, msg)
+-- 向指定fd发送消息
+s.resp.send_by_fd = function(addr, fd, msg)
     if not conns[fd] then
         return
     end
@@ -144,44 +145,27 @@ s.resp.send_by_fd = function(source, fd, msg)
     socket.write(fd, buff)
 end
 
-s.resp.kick = function(source, player_id)
+-- 向指定玩家发送消息
+s.resp.send = function(addr, player_id, msg)
     local gate_player = gate_players[player_id]
-    if not gate_player then
+    if gate_player == nil then
         return
     end
 
-    local c = gate_player.conn
-    gate_players[player_id] = nil
-
-    if not c then
+    local gate_player_conn = gate_player.conn
+    if gate_player_conn == nil then
         return
     end
-    conns[c.fd] = nil
 
-    disconnect(c.fd)
-    socket.close(c.fd)
+    s.resp.send_by_fd(nil, gate_player_conn.fd, msg)
 end
 
-s.resp.send = function(source, player_id, msg)
-    local p = gate_players[player_id]
-    if p == nil then
-        return
-    end
-
-    local c = gate_player.conn
-    if c == nil then
-        return
-    end
-
-    s.resp.send_by_fd(nil, c.fd, msg)
-end
-
--- 关联 fd 和 player_id
-s.resp.sure_agent = function(source, fd, player_id, agent)
+-- 登录成功；绑定网关和agent
+s.resp.login_success = function(addr, fd, player_id, agent)
     local conn = conns[fd]
     if not conn then
         -- 登录过程中已经下线
-        skynet.call("agent_mgr", "lua", "reqkick", player_id, "未完成登录，将其下线")
+        skynet.call("agent_mgr", "lua", "kick", player_id, "未完成登录，将其下线")
         return false
     end
 
@@ -193,6 +177,25 @@ s.resp.sure_agent = function(source, fd, player_id, agent)
     gate_player.conn = conn
     gate_players[player_id] = gate_player
     return true
+end
+
+-- 踢出
+s.resp.kick = function(addr, player_id)
+    local gate_player = gate_players[player_id]
+    if not gate_player then
+        return
+    end
+
+    gate_players[player_id] = nil
+
+    local old_conn = gate_player.conn
+    if not old_conn then
+        return
+    end
+    conns[old_conn.fd] = nil
+
+    disconnect(old_conn.fd)
+    socket.close(old_conn.fd)
 end
 
 function s.init()
@@ -209,10 +212,10 @@ end
 
 -- 功能1.根据cmd 找到s.client.cmd 方法，并调用
 -- 功能2.将s.client.cmd 方法的返回值，通过gateway返回给客户端
-s.resp.client = function(source, fd, cmd, msg)
+s.resp.client = function(addr, fd, cmd, msg)
     if s.client[cmd] then
-        local ret_msg = s.client[cmd](fd, msg, source)
-        skynet.send(source, "lua", "send_by_fd", fd, ret_msg)
+        local ret_msg = s.client[cmd](fd, msg, addr)
+        skynet.send(addr, "lua", "send_by_fd", fd, ret_msg)
     else
         skynet.error("s.resp.client fail : [" .. cmd .. "]")
     end
