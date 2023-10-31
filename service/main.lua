@@ -10,7 +10,6 @@ skynet.start(function()
     local node_cfg = runconfig[node]
 
     -- 节点
-    skynet.uniqueservice('debug_console', 8888)
     local node_mgr = skynet.newservice('node_mgr', "node_mgr", 0)
     skynet.name("node_mgr", node_mgr) -- 设置别名 name,address
     --
@@ -49,8 +48,17 @@ skynet.start(function()
         skynet.name("scene" .. sid, service) -- 设置别名 name,address
     end
 
+
+
     --print(1)
     --skynet.error("Server start. node1:" .. runconfig.cluster.node1)
     --skynet.newservice('gateway', 'gateway', 1)
-    ----skynet.newservice("debug_console", 8000)
+    -- 在 "node1" 上启动 debug_console 服务
+    if node == "node1" then
+        -- admin
+        skynet.newservice("admin", "admin", 0)
+
+        print(node, "debug_console")
+        skynet.uniqueservice("debug_console", 8888)
+    end
 end)

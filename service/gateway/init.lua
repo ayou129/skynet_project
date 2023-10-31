@@ -1,5 +1,6 @@
 local skynet = require("skynet")
 local socket = require("skynet.socket")
+--local protobuf = require("protobuf")
 local s = require("service")
 local runconfig = require("runconfig")
 
@@ -8,6 +9,7 @@ local runconfig = require("runconfig")
 conns = {}
 gate_players = {}
 s.client = {}
+local closing = false
 
 function conn()
     local m = {
@@ -15,6 +17,10 @@ function conn()
         player_id = nil
     }
     return m
+end
+
+s.resp.shutdown = function()
+    closing = true
 end
 
 function gatePlayer()
@@ -28,6 +34,15 @@ end
 
 
 -- 解码 msg_str = 'login,101,102'
+local protobuf_str_unpack = function(msg_str)
+    -- TODO
+end
+
+-- 编码 lua表 -> ,关联的字符串
+local protobuf_str_pack = function(cmd, msg)
+    -- TODO
+end
+
 local str_unpack = function(msg_str)
     local msg = {}
     while true do
@@ -124,6 +139,12 @@ function recv_loop(fd)
 end
 
 local connect = function(fd, addr)
+    print('connect fd', fd, addr)
+    if closing then
+        skynet.error("[Gateway ban!] fd:" .. fd .. " addr:" .. addr)
+        return
+    end
+
     skynet.error("[Gateway connect] fd:" .. fd .. " addr:" .. addr)
     local c = conn()
 

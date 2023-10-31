@@ -12,6 +12,7 @@ s.resp.client = function(addr, fd, cmd, msg)
         ret_msg = { "ret_err", -1, "request not found" }
         skynet.error("request not found", cmd)
     end
+    --ret_msg = pb.encode("login.Login", ret_msg)
     skynet.send(addr, "lua", "send_by_fd", fd, ret_msg)
 end
 

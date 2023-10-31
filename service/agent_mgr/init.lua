@@ -87,10 +87,10 @@ s.resp.kick = function(addr, player_id, reason)
         return false
     end
 
-    if mplayer.status ~= STATUS.PLAYING then
-        skynet.error("玩家不在线")
-        return false
-    end
+    --if mplayer.status ~= STATUS.PLAYING then
+    --    skynet.error("玩家不在线")
+    --    return false
+    --end
 
     local player_node = mplayer.node
     local player_agent = mplayer.agent
@@ -107,6 +107,31 @@ s.resp.kick = function(addr, player_id, reason)
     players[player_id] = nil
 
     return true
+end
+
+s.resp.shutdown = function(addr, number)
+    print("agent_mgr shutdown", addr,number)
+    local count = 0
+    for player_id, mplayer in pairs(players) do
+        --if mplayer.status == STATUS.PLAYING then
+        count = count + 1
+        --end
+    end
+
+    local exec_count = 0
+    for player_id, mplayer in pairs(players) do
+        print("user kick player_id ", player_id)
+        skynet.fork(s.resp.kick, nil, player_id, "服务器关闭")
+        exec_count = exec_count + 1
+        if exec_count >= number then
+            break
+        end
+    end
+    local ret = count - exec_count
+    if ret <= 0 then
+        ret = 0
+    end
+    return ret
 end
 
 s.start(...)
