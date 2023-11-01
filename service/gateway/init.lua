@@ -27,7 +27,10 @@ function gatePlayer()
     local m = {
         player_id = nil, -- index
         agent = nil,
-        conn = nil
+        conn = nil,
+        key = math.random(1, 999999999), -- 用于验证客户端[重连]
+        lost_conn_time = nil, -- 断开连接的连接时间
+        msg_cache = {} -- 断线后的缓存消息
     }
     return m
 end

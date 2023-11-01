@@ -46,8 +46,12 @@ s.init = function()
     -- db 加载用户数据，这里使用模拟十句
     s.data = {
         coin = 100,
-        hp = 200
+        hp = 200,
+        last_login_time = 1582725978
     }
+
+    -- 定时唤醒
+
 end
 
 s.start(...)

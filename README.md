@@ -70,3 +70,50 @@ protoc --descriptor_set_out login.pb login.proto
 ## 关服
 admin/console
 > telnet 127.0.0.1 8888
+
+## 常用逻辑
+每天第一次登录逻辑
+~~~
+
+function get_data(timestamp)
+    local day = (timestamp + 3600 * 8) / (3600 * 24)
+    return math.ceil(day)
+end
+
+s.init = function()
+
+    -- 获取和更新 登录时间
+    local last_day = get_data(s.data.last_login_time)
+    local day = get_data(os.time())
+    s.data.last_login_time = os.time()
+
+    -- 判断每天第一次登录
+    if day > last_day then
+        -- 每天第一次登录逻辑
+        --first_login_day()
+    end
+end
+~~~
+
+定时唤醒
+~~~
+-- 开启服务器时间 从数据库读取
+-- 关闭服务器时保存
+local last_check_time = 1582935650
+
+-- 1970年1月1日是星期四，所以我们要减去这个偏移量
+function get_week_by_thu2040(timestamp)
+    local week = (timestamp + 3600 * 8 - 3600 * 20 - 40 * 60) / (3600 * 24 * 7)
+    return math.ceil(week)
+end
+
+function timer()
+    local last = get_week_by_thu2040(last_check_time)
+    local now = get_week_by_thu2040(os.time())
+    last_check_time = os.time()
+    if now > last then
+        -- 开启活动
+        --open_activity()
+    end
+end
+~~~
