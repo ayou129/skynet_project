@@ -1,5 +1,25 @@
 # skynet_project
 
+start cmd
+~~~
+cd /Users/liguoxin/Desktop/web/learn/skynet_project
+
+./skynet/skynet ./etc/config.node1
+
+./skynet/skynet ./etc/config.node2
+
+# 连接debug_console
+telnet 127.0.0.1 8888
+
+# 连接 node1 ，login,123,123
+telnet 127.0.0.1 9702
+
+# 连接 admin， stop
+telnet 127.0.0.1 8889
+~~~
+
+
+
 gateway：网关
 - conns：所有连接的fd
 - gate_players：所有连接的在线玩家
